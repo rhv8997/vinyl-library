@@ -7,43 +7,44 @@
   <style>
     :root {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0b0b0d;
+      background: #050508;
       color: #f5f5f5;
     }
 
     body {
       margin: 0;
       padding: 16px;
-      max-width: 600px;
+      max-width: 960px;
       margin-inline: auto;
     }
 
     header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     h1 {
       margin: 0;
-      font-size: 1.8rem;
+      font-size: 1.9rem;
     }
 
     p.subtitle {
       margin: 8px 0 0;
       font-size: 0.9rem;
-      opacity: 0.7;
+      opacity: 0.75;
     }
 
     .search-box {
-      margin: 16px 0 24px;
+      margin: 16px auto 20px;
+      max-width: 420px;
     }
 
     .search-input {
       width: 100%;
-      padding: 10px 12px;
+      padding: 10px 14px;
       border-radius: 999px;
       border: 1px solid #333;
-      background: #141418;
+      background: #111118;
       color: inherit;
       font-size: 0.95rem;
       box-sizing: border-box;
@@ -54,37 +55,82 @@
       border-color: #1db954;
     }
 
-    ul.vinyl-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    /* GRID */
+    .vinyl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      padding: 4px 0 20px;
     }
 
-    .vinyl-item {
-      border-radius: 12px;
-      padding: 12px 14px;
-      background: #15151a;
+    .vinyl-card {
+      background: #111118;
+      border-radius: 14px;
+      padding: 10px;
+      box-sizing: border-box;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      cursor: pointer;
+    }
+
+    .vinyl-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+      background: #15151f;
+    }
+
+    .cover-wrap {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 1 / 1;
+      background: #222;
+    }
+
+    .cover-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .cover-badge {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.65);
+      font-size: 0.7rem;
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 4px;
     }
 
-    .vinyl-info {
+    .cover-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #1db954;
+    }
+
+    .vinyl-meta {
       display: flex;
       flex-direction: column;
-      min-width: 0;
+      gap: 2px;
+      min-height: 44px;
     }
 
     .vinyl-title {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
-      white-space: nowrap;
+      line-height: 1.2;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .vinyl-artist {
@@ -95,20 +141,35 @@
       text-overflow: ellipsis;
     }
 
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2px;
+    }
+
     .play-button {
-      flex-shrink: 0;
       border: none;
       border-radius: 999px;
-      padding: 8px 14px;
+      padding: 6px 12px;
       background: #1db954;
-      color: #0b0b0d;
+      color: #050508;
       font-weight: 600;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       cursor: pointer;
+      flex-shrink: 0;
     }
 
     .play-button:active {
       transform: scale(0.96);
+    }
+
+    .year-pill {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      border-radius: 999px;
+      padding: 3px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .empty-state {
@@ -122,7 +183,7 @@
 <body>
   <header>
     <h1>My Vinyl Library</h1>
-    <p class="subtitle">Tap a record to play it on Spotify.</p>
+    <p class="subtitle">Tap an album to play it on Spotify.</p>
   </header>
 
   <div class="search-box">
@@ -130,12 +191,12 @@
       id="search"
       class="search-input"
       type="text"
-      placeholder="Search vinyls by title or artist..."
+      placeholder="Search by title or artist..."
       autocomplete="off"
     />
   </div>
 
-  <ul id="vinyl-list" class="vinyl-list"></ul>
+  <div id="vinyl-grid" class="vinyl-grid"></div>
 
   <p id="empty-state" class="empty-state" style="display:none;">
     No vinyls found. Try a different search.
@@ -145,12 +206,16 @@
     /**
      * 1) ADD YOUR VINYLS HERE
      *
-     * - title: name of the album
+     * - title: album name
      * - artist: artist name
-     * - spotifyUrl: open.spotify.com link OR spotify:album:ID
+     * - year: (optional) release year, shown as a small pill
+     * - spotifyUrl: open.spotify.com album link
+     * - coverUrl: direct image URL for the cover (from Spotify or elsewhere)
      *
-     * To get the URL:
-     *   In Spotify → go to album → Share → Copy link to album
+     * To get coverUrl from Spotify desktop:
+     *   - Open album
+     *   - Right-click the cover → "Copy image address" (or similar)
+     *   - Paste the URL here
      */
     const VINYLS = [
       {
@@ -168,71 +233,91 @@
         artist: "The Beatles",
         spotifyUrl: "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN"
       }
-      // 👉 Add more objects like this for each vinyl you own
     ];
+async function fetchCover(url) {
+  try {
+    const oembedUrl =
+      "https://open.spotify.com/oembed?url=" + encodeURIComponent(url);
 
-    const vinylListEl = document.getElementById("vinyl-list");
-    const searchInputEl = document.getElementById("search");
-    const emptyStateEl = document.getElementById("empty-state");
+    const res = await fetch(oembedUrl);
+    const data = await res.json();
 
-    function renderList(filterText = "") {
-      vinylListEl.innerHTML = "";
+    return data.thumbnail_url; // <-- album cover from Spotify
+  } catch (err) {
+    console.error("Error fetching cover:", err);
+    return null;
+  }
+}
 
-      const query = filterText.trim().toLowerCase();
-      const filtered = VINYLS.filter(v => {
-        if (!query) return true;
-        return (
-          v.title.toLowerCase().includes(query) ||
-          v.artist.toLowerCase().includes(query)
-        );
-      });
+const gridEl = document.getElementById("vinyl-grid");
+const searchInputEl = document.getElementById("search");
+const emptyStateEl = document.getElementById("empty-state");
 
-      if (filtered.length === 0) {
-        emptyStateEl.style.display = "block";
-        return;
-      } else {
-        emptyStateEl.style.display = "none";
-      }
+/**
+ * Render grid but fetch cover art dynamically.
+ */
+async function renderGrid(filterText = "") {
+  gridEl.innerHTML = "";
 
-      filtered.forEach(vinyl => {
-        const li = document.createElement("li");
-        li.className = "vinyl-item";
+  const query = filterText.trim().toLowerCase();
+  const filtered = VINYLS.filter(v => {
+    if (!query) return true;
+    return v.title.toLowerCase().includes(query) ||
+           v.artist.toLowerCase().includes(query);
+  });
 
-        const info = document.createElement("div");
-        info.className = "vinyl-info";
+  if (filtered.length === 0) {
+    emptyStateEl.style.display = "block";
+    return;
+  } else {
+    emptyStateEl.style.display = "none";
+  }
 
-        const titleEl = document.createElement("div");
-        titleEl.className = "vinyl-title";
-        titleEl.textContent = vinyl.title;
+  for (const vinyl of filtered) {
+    const card = document.createElement("div");
+    card.className = "vinyl-card";
 
-        const artistEl = document.createElement("div");
-        artistEl.className = "vinyl-artist";
-        artistEl.textContent = vinyl.artist;
+    const coverWrap = document.createElement("div");
+    coverWrap.className = "cover-wrap";
 
-        info.appendChild(titleEl);
-        info.appendChild(artistEl);
+    const img = document.createElement("img");
 
-        const button = document.createElement("button");
-        button.className = "play-button";
-        button.textContent = "Play";
-        button.addEventListener("click", () => {
-          // Open Spotify. On mobile this should jump to the app.
-          window.location.href = vinyl.spotifyUrl;
-        });
+    // Load cover dynamically
+    const coverUrl = await fetchCover(vinyl.spotifyUrl);
+    img.src = coverUrl || "fallback.jpg";  
+    img.alt = `${vinyl.title} cover`;
 
-        li.appendChild(info);
-        li.appendChild(button);
-        vinylListEl.appendChild(li);
-      });
-    }
+    coverWrap.appendChild(img);
+    card.appendChild(coverWrap);
 
-    // Initial render
-    renderList();
+    // Title & Artist
+    const meta = document.createElement("div");
+    meta.className = "vinyl-meta";
 
-    // Live search
-    searchInputEl.addEventListener("input", (e) => {
-      renderList(e.target.value);
+    const titleEl = document.createElement("div");
+    titleEl.className = "vinyl-title";
+    titleEl.textContent = vinyl.title;
+
+    const artistEl = document.createElement("div");
+    artistEl.className = "vinyl-artist";
+    artistEl.textContent = vinyl.artist;
+
+    meta.appendChild(titleEl);
+    meta.appendChild(artistEl);
+    card.appendChild(meta);
+
+    // Click to play
+    card.addEventListener("click", () => {
+      window.location.href = vinyl.spotifyUrl;
     });
-  </script>
+
+    gridEl.appendChild(card);
+  }
+}
+
+renderGrid();
+
+searchInputEl.addEventListener("input", e => renderGrid(e.target.value));
+</script>
 </body>
 </html>

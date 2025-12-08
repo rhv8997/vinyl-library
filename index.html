@@ -20,7 +20,7 @@
 
     header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     h1 {
@@ -34,9 +34,16 @@
       opacity: 0.75;
     }
 
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0 18px;
+    }
+
     .search-box {
-      margin: 16px auto 20px;
       max-width: 420px;
+      margin-inline: auto;
     }
 
     .search-input {
@@ -53,6 +60,37 @@
     .search-input:focus {
       outline: none;
       border-color: #1db954;
+    }
+
+    .actions-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .button-primary {
+      background: #1db954;
+      color: #050508;
+    }
+
+    .button-ghost {
+      background: transparent;
+      border: 1px solid #333;
+      color: #f5f5f5;
+    }
+
+    .button:active {
+      transform: scale(0.96);
     }
 
     /* GRID */
@@ -143,33 +181,8 @@
 
     .card-footer {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      justify-content: flex-end;
       margin-top: 2px;
-    }
-
-    .play-button {
-      border: none;
-      border-radius: 999px;
-      padding: 6px 12px;
-      background: #1db954;
-      color: #050508;
-      font-weight: 600;
-      font-size: 0.78rem;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .play-button:active {
-      transform: scale(0.96);
-    }
-
-    .year-pill {
-      font-size: 0.7rem;
-      opacity: 0.7;
-      border-radius: 999px;
-      padding: 3px 8px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .empty-state {
@@ -186,15 +199,21 @@
     <p class="subtitle">Tap an album to play it on Spotify.</p>
   </header>
 
-  <div class="search-box">
-    <input
-      id="search"
-      class="search-input"
-      type="text"
-      placeholder="Search by title or artist..."
-      autocomplete="off"
-    />
-  </div>
+  <section class="controls">
+    <div class="search-box">
+      <input
+        id="search"
+        class="search-input"
+        type="text"
+        placeholder="Search by title or artist..."
+        autocomplete="off"
+      />
+    </div>
+
+    <div class="actions-row">
+      <button id="random-btn" class="button button-primary">🎲 Random album</button>
+    </div>
+  </section>
 
   <div id="vinyl-grid" class="vinyl-grid"></div>
 
@@ -204,120 +223,157 @@
 
   <script>
     /**
-     * 1) ADD YOUR VINYLS HERE
+     * HARD-CODED VINYL LIST
      *
-     * - title: album name
-     * - artist: artist name
-     * - year: (optional) release year, shown as a small pill
-     * - spotifyUrl: open.spotify.com album link
-     * - coverUrl: direct image URL for the cover (from Spotify or elsewhere)
-     *
-     * To get coverUrl from Spotify desktop:
-     *   - Open album
-     *   - Right-click the cover → "Copy image address" (or similar)
-     *   - Paste the URL here
+     * When you send me your albums, I’ll fill this out for you.
+     * For now, these are just example entries.
      */
     const VINYLS = [
       {
         title: "Random Access Memories",
         artist: "Daft Punk",
-        spotifyUrl: "https://open.spotify.com/album/4m2880jivSbbyEGAKfITCa"
+        spotifyUrl: "https://open.spotify.com/album/4m2880jivSbbyEGAKfITCa",
+        coverUrl: null
       },
       {
         title: "Rumours",
         artist: "Fleetwood Mac",
-        spotifyUrl: "https://open.spotify.com/album/1bt6q2SruMsBtcerNVtpZB"
+        spotifyUrl: "https://open.spotify.com/album/1bt6q2SruMsBtcerNVtpZB",
+        coverUrl: null
       },
       {
         title: "Abbey Road",
         artist: "The Beatles",
-        spotifyUrl: "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN"
+        spotifyUrl: "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN",
+        coverUrl: null
       }
     ];
-async function fetchCover(url) {
-  try {
-    const oembedUrl =
-      "https://open.spotify.com/oembed?url=" + encodeURIComponent(url);
 
-    const res = await fetch(oembedUrl);
-    const data = await res.json();
+    const gridEl = document.getElementById("vinyl-grid");
+    const searchInputEl = document.getElementById("search");
+    const emptyStateEl = document.getElementById("empty-state");
+    const randomBtnEl = document.getElementById("random-btn");
 
-    return data.thumbnail_url; // <-- album cover from Spotify
-  } catch (err) {
-    console.error("Error fetching cover:", err);
-    return null;
-  }
-}
+    const PLACEHOLDER_SVG =
+      "data:image/svg+xml;charset=utf-8," +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#222"/><circle cx="150" cy="150" r="90" fill="#111"/><circle cx="150" cy="150" r="12" fill="#555"/></svg>'
+      );
 
-const gridEl = document.getElementById("vinyl-grid");
-const searchInputEl = document.getElementById("search");
-const emptyStateEl = document.getElementById("empty-state");
+    function openSpotify(url) {
+      // This will usually deep-link into the Spotify app on mobile
+      window.location.href = url;
+    }
 
-/**
- * Render grid but fetch cover art dynamically.
- */
-async function renderGrid(filterText = "") {
-  gridEl.innerHTML = "";
+    // Get cover art from Spotify oEmbed, then cache on the vinyl object
+    async function fetchCoverFor(vinyl, imgEl) {
+      if (vinyl.coverUrl) {
+        imgEl.src = vinyl.coverUrl;
+        return;
+      }
+      try {
+        const oembedUrl =
+          "https://open.spotify.com/oembed?url=" + encodeURIComponent(vinyl.spotifyUrl);
+        const res = await fetch(oembedUrl);
+        if (!res.ok) throw new Error("oEmbed failed");
+        const data = await res.json();
+        vinyl.coverUrl = data.thumbnail_url || PLACEHOLDER_SVG;
+        imgEl.src = vinyl.coverUrl;
+      } catch (err) {
+        console.error("Error fetching cover:", err);
+        imgEl.src = PLACEHOLDER_SVG;
+      }
+    }
 
-  const query = filterText.trim().toLowerCase();
-  const filtered = VINYLS.filter(v => {
-    if (!query) return true;
-    return v.title.toLowerCase().includes(query) ||
-           v.artist.toLowerCase().includes(query);
-  });
+    function getFilteredVinyls(queryText) {
+      const query = (queryText || "").trim().toLowerCase();
+      if (!query) return VINYLS;
+      return VINYLS.filter(v => {
+        const t = (v.title || "").toLowerCase();
+        const a = (v.artist || "").toLowerCase();
+        return t.includes(query) || a.includes(query);
+      });
+    }
 
-  if (filtered.length === 0) {
-    emptyStateEl.style.display = "block";
-    return;
-  } else {
-    emptyStateEl.style.display = "none";
-  }
+    function renderGrid(filterText = "") {
+      gridEl.innerHTML = "";
 
-  for (const vinyl of filtered) {
-    const card = document.createElement("div");
-    card.className = "vinyl-card";
+      const filtered = getFilteredVinyls(filterText);
 
-    const coverWrap = document.createElement("div");
-    coverWrap.className = "cover-wrap";
+      if (filtered.length === 0) {
+        emptyStateEl.style.display = "block";
+        return;
+      } else {
+        emptyStateEl.style.display = "none";
+      }
 
-    const img = document.createElement("img");
+      filtered.forEach(vinyl => {
+        const card = document.createElement("div");
+        card.className = "vinyl-card";
+        card.addEventListener("click", () => openSpotify(vinyl.spotifyUrl));
 
-    // Load cover dynamically
-    const coverUrl = await fetchCover(vinyl.spotifyUrl);
-    img.src = coverUrl || "fallback.jpg";  
-    img.alt = `${vinyl.title} cover`;
+        const coverWrap = document.createElement("div");
+        coverWrap.className = "cover-wrap";
 
-    coverWrap.appendChild(img);
-    card.appendChild(coverWrap);
+        const img = document.createElement("img");
+        img.alt = `${vinyl.title || "Album"} cover`;
+        img.src = vinyl.coverUrl || PLACEHOLDER_SVG;
+        coverWrap.appendChild(img);
 
-    // Title & Artist
-    const meta = document.createElement("div");
-    meta.className = "vinyl-meta";
+        // Kick off async cover fetch (if not already loaded)
+        if (!vinyl.coverUrl) {
+          fetchCoverFor(vinyl, img);
+        }
 
-    const titleEl = document.createElement("div");
-    titleEl.className = "vinyl-title";
-    titleEl.textContent = vinyl.title;
+        const badge = document.createElement("div");
+        badge.className = "cover-badge";
+        badge.innerHTML =
+          '<span class="cover-badge-dot"></span><span>Spotify</span>';
+        coverWrap.appendChild(badge);
 
-    const artistEl = document.createElement("div");
-    artistEl.className = "vinyl-artist";
-    artistEl.textContent = vinyl.artist;
+        const meta = document.createElement("div");
+        meta.className = "vinyl-meta";
 
-    meta.appendChild(titleEl);
-    meta.appendChild(artistEl);
-    card.appendChild(meta);
+        const titleEl = document.createElement("div");
+        titleEl.className = "vinyl-title";
+        titleEl.textContent = vinyl.title || "Untitled album";
 
-    // Click to play
-    card.addEventListener("click", () => {
-      window.location.href = vinyl.spotifyUrl;
+        const artistEl = document.createElement("div");
+        artistEl.className = "vinyl-artist";
+        artistEl.textContent = vinyl.artist || "—";
+
+        meta.appendChild(titleEl);
+        meta.appendChild(artistEl);
+
+        const footer = document.createElement("div");
+        footer.className = "card-footer";
+        // (footer kept minimal for now; we could add year/info later)
+
+        card.appendChild(coverWrap);
+        card.appendChild(meta);
+        card.appendChild(footer);
+
+        gridEl.appendChild(card);
+      });
+    }
+
+    // Search
+    searchInputEl.addEventListener("input", e => {
+      renderGrid(e.target.value);
     });
 
-    gridEl.appendChild(card);
-  }
-}
+    // Random album button
+    randomBtnEl.addEventListener("click", () => {
+      const filterText = searchInputEl.value;
+      const pool = getFilteredVinyls(filterText);
+      if (!pool.length) return;
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      const chosen = pool[randomIndex];
+      openSpotify(chosen.spotifyUrl);
+    });
 
-renderGrid();
-
-searchInputEl.addEventListener("input", e => renderGrid(e.target.value));
-</script>
+    // Initial render
+    renderGrid();
+  </script>
 </body>
 </html>

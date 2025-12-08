@@ -1,375 +1,607 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>My Vinyl Library</title>
+  <meta charset="utf-8" />
+  <title>My Vinyl Shelf</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #050508;
-      color: #f5f5f5;
+      color-scheme: dark;
+      --bg: #050510;
+      --bg-soft: #0d0d1f;
+      --card: #151528;
+      --accent: #8f7bff;
+      --accent-soft: rgba(143, 123, 255, 0.12);
+      --text: #f5f5ff;
+      --muted: #a0a0c0;
+      --border: rgba(255, 255, 255, 0.04);
+      --radius-xl: 22px;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1a1630 0, #050510 45%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
       padding: 16px;
-      max-width: 960px;
-      margin-inline: auto;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(0,0,0,0.7));
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: var(--shadow-soft);
+      padding: 18px 16px 20px;
+      backdrop-filter: blur(24px);
     }
 
     header {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
       margin-bottom: 16px;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 1.9rem;
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    p.subtitle {
-      margin: 8px 0 0;
-      font-size: 0.9rem;
-      opacity: 0.75;
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    h1 span.badge {
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      text-transform: none;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
     }
 
     .controls {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin: 16px 0 18px;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
     }
 
-    .search-box {
-      max-width: 420px;
-      margin-inline: auto;
+    .search-wrap {
+      flex: 1 1 160px;
+      position: relative;
     }
 
     .search-input {
       width: 100%;
-      padding: 10px 14px;
       border-radius: 999px;
-      border: 1px solid #333;
-      background: #111118;
-      color: inherit;
-      font-size: 0.95rem;
-      box-sizing: border-box;
-    }
-
-    .search-input:focus {
+      border: 1px solid var(--border);
+      background: rgba(5, 5, 20, 0.9);
+      padding: 8px 32px 8px 30px;
+      color: var(--text);
+      font-size: 0.85rem;
       outline: none;
-      border-color: #1db954;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.01);
     }
 
-    .actions-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
+    .search-input::placeholder {
+      color: rgba(160,160,200,0.65);
+    }
+
+    .search-icon,
+    .clear-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .search-icon {
+      left: 10px;
+    }
+
+    .clear-icon {
+      right: 10px;
+      cursor: pointer;
+      pointer-events: auto;
     }
 
     .button {
-      border: none;
       border-radius: 999px;
-      padding: 8px 16px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      border: none;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      white-space: nowrap;
+      transition: transform 0.12s ease, box-shadow 0.12s ease,
+        background 0.12s ease, border-color 0.12s ease;
     }
 
     .button-primary {
-      background: #1db954;
-      color: #050508;
+      background: radial-gradient(circle at top left, #c8a5ff, #7a5cff);
+      color: #050510;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.25),
+        0 14px 26px rgba(96, 80, 255, 0.65);
     }
 
-    .button-ghost {
-      background: transparent;
-      border: 1px solid #333;
-      color: #f5f5f5;
+    .button-primary:active {
+      transform: scale(0.97);
+      box-shadow: 0 8px 18px rgba(96, 80, 255, 0.7);
     }
 
-    .button:active {
-      transform: scale(0.96);
+    .button-secondary {
+      background: rgba(10,10,26,0.95);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.45);
     }
 
-    /* GRID */
-    .vinyl-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 14px;
-      padding: 4px 0 20px;
+    .button-secondary:active {
+      transform: scale(0.97);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.6);
     }
 
-    .vinyl-card {
-      background: #111118;
-      border-radius: 14px;
-      padding: 10px;
-      box-sizing: border-box;
+    .chips-row {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-      cursor: pointer;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
     }
 
-    .vinyl-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
-      background: #15151f;
-    }
-
-    .cover-wrap {
-      position: relative;
-      border-radius: 10px;
-      overflow: hidden;
-      aspect-ratio: 1 / 1;
-      background: #222;
-    }
-
-    .cover-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .cover-badge {
-      position: absolute;
-      left: 8px;
-      bottom: 8px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.65);
+    .chip {
       font-size: 0.7rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .cover-badge-dot {
-      width: 8px;
-      height: 8px;
+      padding: 3px 9px;
       border-radius: 999px;
-      background: #1db954;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(5,5,20,0.8);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
     }
 
-    .vinyl-meta {
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    @media (min-width: 768px) {
+      .app {
+        padding: 22px 22px 24px;
+      }
+      header {
+        margin-bottom: 18px;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .grid {
+        gap: 12px;
+      }
+    }
+
+    .card {
+      position: relative;
       display: flex;
       flex-direction: column;
-      gap: 2px;
-      min-height: 44px;
+      gap: 6px;
+      padding: 9px;
+      background: radial-gradient(circle at top left,
+                  rgba(255,255,255,0.08),
+                  rgba(5,5,20,0.95));
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.55);
+      transition: transform 0.14s ease, box-shadow 0.14s ease,
+        border-color 0.14s ease, background 0.14s ease;
     }
 
-    .vinyl-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      line-height: 1.2;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.75);
+      border-color: rgba(189, 168, 255, 0.7);
+      background: radial-gradient(circle at top left,
+                  rgba(189,168,255,0.25),
+                  rgba(5,5,20,0.98));
+    }
+
+    .card.highlight {
+      box-shadow: 0 0 0 2px rgba(199,184,255,0.85),
+                  0 18px 46px rgba(117,104,255,0.9);
+      transform: translateY(-3px) scale(1.01);
+    }
+
+    .cover {
+      border-radius: 16px;
+      aspect-ratio: 1 / 1;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(255,255,255,0.16), transparent 55%),
+        conic-gradient(
+          from 210deg,
+          rgba(143,123,255,0.95),
+          rgba(255,162,209,0.95),
+          rgba(255,219,128,0.95),
+          rgba(143,123,255,0.95)
+        );
+      position: relative;
       overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 10px;
     }
 
-    .vinyl-artist {
-      font-size: 0.8rem;
-      opacity: 0.7;
+    .cover-inner {
+      background: rgba(5,5,20,0.58);
+      backdrop-filter: blur(24px);
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      border: 1px solid rgba(255,255,255,0.25);
+      max-width: 90%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .card-footer {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 2px;
+    .circle-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2), transparent 55%),
+        radial-gradient(circle at 80% 80%, rgba(0,0,0,0.4), transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0.7;
+      pointer-events: none;
     }
 
-    .empty-state {
-      margin-top: 40px;
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin: 2px 2px 0;
+      letter-spacing: 0.02em;
+    }
+
+    .card-artist {
+      font-size: 0.75rem;
+      margin: 0 2px 1px;
+      color: var(--muted);
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 2px 1px;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .spotify-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(30,215,96,0.75);
+      color: rgba(209,255,225,0.9);
+    }
+
+    .spotify-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #1ed760;
+      box-shadow: 0 0 10px #1ed760;
+    }
+
+    .count-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: 2px;
+    }
+
+    .empty {
+      margin-top: 24px;
       text-align: center;
-      opacity: 0.7;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      color: var(--muted);
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>My Vinyl Library</h1>
-    <p class="subtitle">Tap an album to play it on Spotify.</p>
-  </header>
+  <div class="app">
+    <header>
+      <div class="title-block">
+        <h1>
+          Vinyl Shelf
+          <span class="badge">Private · NFC only</span>
+        </h1>
+        <p class="subtitle">
+          Tap a record to search &amp; play it in Spotify. Random for “vinyl roulette”.
+        </p>
+      </div>
+      <button class="button button-secondary" id="randomButton">
+        <span>🎲</span>
+        RANDOM
+      </button>
+    </header>
 
-  <section class="controls">
-    <div class="search-box">
-      <input
-        id="search"
-        class="search-input"
-        type="text"
-        placeholder="Search by title or artist..."
-        autocomplete="off"
-      />
+    <div class="chips-row">
+      <span class="chip">Spotify only</span>
+      <span class="chip" id="countChip"></span>
     </div>
 
-    <div class="actions-row">
-      <button id="random-btn" class="button button-primary">🎲 Random album</button>
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input
+          id="searchInput"
+          class="search-input"
+          placeholder="Filter by artist or album…"
+          autocomplete="off"
+        />
+        <span class="clear-icon" id="clearSearch" style="display:none;">✕</span>
+      </div>
+      <button class="button button-primary" id="scrollTopButton">
+        ⬆️ SHELF TOP
+      </button>
     </div>
-  </section>
 
-  <div id="vinyl-grid" class="vinyl-grid"></div>
-
-  <p id="empty-state" class="empty-state" style="display:none;">
-    No vinyls found. Try a different search.
-  </p>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="emptyState" style="display:none;">
+      No matches. Try a shorter search or different spelling.
+    </div>
+  </div>
 
   <script>
-    /**
-     * HARD-CODED VINYL LIST
-     *
-     * When you send me your albums, I’ll fill this out for you.
-     * For now, these are just example entries.
-     */
+    // Hard-coded vinyl library based on your list
     const VINYLS = [
-      {
-        title: "Random Access Memories",
-        artist: "Daft Punk",
-        spotifyUrl: "https://open.spotify.com/album/4m2880jivSbbyEGAKfITCa",
-        coverUrl: null
-      },
-      {
-        title: "Rumours",
-        artist: "Fleetwood Mac",
-        spotifyUrl: "https://open.spotify.com/album/1bt6q2SruMsBtcerNVtpZB",
-        coverUrl: null
-      },
-      {
-        title: "Abbey Road",
-        artist: "The Beatles",
-        spotifyUrl: "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN",
-        coverUrl: null
-      }
-    ];
+      { title: "Positions (Deluxe Edition)", artist: "Ariana Grande" },
+      { title: "LUX", artist: "ROSALÍA" },
+      { title: "From The Pyre", artist: "The Last Dinner Party" },
+      { title: "The Art of Loving", artist: "Olivia Dean" },
+      { title: "THAT'S SHOWBIZ, BABY!", artist: "Jade" },
+      { title: "Messy", artist: "Olivia Dean" },
+      { title: "eternal sunshine", artist: "Ariana Grande" },
+      { title: "Prelude to Ecstasy", artist: "The Last Dinner Party" },
+      { title: "folklore", artist: "Taylor Swift" },
+      { title: "People Watching", artist: "Sam Fender" },
+      { title: "No Hard Feelings", artist: "The Beaches" },
+      { title: "EURO-COUNTRY", artist: "CMAT" },
+      { title: "Virgin", artist: "Lorde" },
+      { title: "Me and the Dog (EP)", artist: "Sam Fender" }, // left as-is; will search this text
+      { title: "fruitcake", artist: "Sabrina Carpenter" },
+      { title: "Vertigo (Tour Edition)", artist: "Griff" },
+      { title: "Short n’ Sweet", artist: "Sabrina Carpenter" },
+      { title: "BRAT", artist: "Charli XCX" },
+      { title: "HIT ME HARD AND SOFT", artist: "Billie Eilish" },
+      { title: "Radical Optimism", artist: "Dua Lipa" },
+      { title: "What a Devastating Turn of Events", artist: "Rachel Chinouriri" },
+      { title: "THE TORTURED POETS DEPARTMENT", artist: "Taylor Swift" },
+      { title: "Re: This Is Why", artist: "Paramore" },
+      { title: "COWBOY CARTER", artist: "Beyoncé" },
+      { title: "1989 (Taylor’s Version)", artist: "Taylor Swift" },
+      { title: "Crazymad, For Me", artist: "CMAT" },
+      { title: "The Rise and Fall of a Midwest Princess", artist: "Chappell Roan" },
+      { title: "GUTS (spilled)", artist: "Olivia Rodrigo" },
+      { title: "The Loveliest Time", artist: "Carly Rae Jepsen" },
+      { title: "Unreal Unearth", artist: "Hozier" },
+      { title: "Barbie The Album", artist: "Various Artists" },
+      { title: "Speak Now (Taylor’s Version)", artist: "Taylor Swift" },
+      { title: "folklore: the long pond studio sessions", artist: "Taylor Swift" },
+      { title: "Endless Summer Vacation", artist: "Miley Cyrus" },
+      { title: "Midnights", artist: "Taylor Swift" },
+      { title: "The Loneliest Time", artist: "Carly Rae Jepsen" },
+      { title: "Preacher’s Daughter", artist: "Ethel Cain" },
+      { title: "Solar Power", artist: "Lorde" },
+      { title: "evermore", artist: "Taylor Swift" },
+      { title: "Plastic Hearts", artist: "Miley Cyrus" },
+      { title: "Wasteland, Baby!", artist: "Hozier" },
+      { title: "MAGDALENE", artist: "FKA twigs" },
+      { title: "RINA", artist: "Rina Sawayama" },
+      { title: "Number 1 Angel", artist: "Charli XCX" },
+      { title: "Melodrama", artist: "Lorde" },
+      { title: "E•MO•TION", artist: "Carly Rae Jepsen" },
+      { title: "Hozier", artist: "Hozier" },
+      { title: "Pang", artist: "Caroline Polachek" },
+      { title: "Pure Heroine", artist: "Lorde" },
+      { title: "Kiss", artist: "Carly Rae Jepsen" }
+    ].map((item, index) => ({
+      ...item,
+      id: `${item.artist}-${item.title}`.toLowerCase().replace(/\s+/g, "-") + "-" + index
+    }));
 
-    const gridEl = document.getElementById("vinyl-grid");
-    const searchInputEl = document.getElementById("search");
-    const emptyStateEl = document.getElementById("empty-state");
-    const randomBtnEl = document.getElementById("random-btn");
+    const gridEl = document.getElementById("grid");
+    const searchInput = document.getElementById("searchInput");
+    const clearSearch = document.getElementById("clearSearch");
+    const randomButton = document.getElementById("randomButton");
+    const emptyState = document.getElementById("emptyState");
+    const scrollTopButton = document.getElementById("scrollTopButton");
+    const countChip = document.getElementById("countChip");
 
-    const PLACEHOLDER_SVG =
-      "data:image/svg+xml;charset=utf-8," +
-      encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#222"/><circle cx="150" cy="150" r="90" fill="#111"/><circle cx="150" cy="150" r="12" fill="#555"/></svg>'
-      );
+    countChip.textContent = `${VINYLS.length} records`;
 
-    function openSpotify(url) {
-      // This will usually deep-link into the Spotify app on mobile
-      window.location.href = url;
+    let filtered = [...VINYLS];
+    let highlightTimeout = null;
+
+    function buildSpotifySearchUrl(vinyl) {
+      const q = encodeURIComponent(`${vinyl.artist} ${vinyl.title}`);
+      return `https://open.spotify.com/search/${q}`;
     }
 
-    // Get cover art from Spotify oEmbed, then cache on the vinyl object
-    async function fetchCoverFor(vinyl, imgEl) {
-      if (vinyl.coverUrl) {
-        imgEl.src = vinyl.coverUrl;
-        return;
-      }
-      try {
-        const oembedUrl =
-          "https://open.spotify.com/oembed?url=" + encodeURIComponent(vinyl.spotifyUrl);
-        const res = await fetch(oembedUrl);
-        if (!res.ok) throw new Error("oEmbed failed");
-        const data = await res.json();
-        vinyl.coverUrl = data.thumbnail_url || PLACEHOLDER_SVG;
-        imgEl.src = vinyl.coverUrl;
-      } catch (err) {
-        console.error("Error fetching cover:", err);
-        imgEl.src = PLACEHOLDER_SVG;
-      }
+    function createCard(vinyl, index) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.id = vinyl.id;
+
+      const cover = document.createElement("div");
+      cover.className = "cover";
+
+      const circle = document.createElement("div");
+      circle.className = "circle-glow";
+      cover.appendChild(circle);
+
+      const label = document.createElement("div");
+      label.className = "cover-inner";
+      const shortTitle = vinyl.title.length > 18
+        ? vinyl.title.slice(0, 16) + "…"
+        : vinyl.title;
+      label.textContent = shortTitle;
+      cover.appendChild(label);
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = vinyl.title;
+
+      const artist = document.createElement("div");
+      artist.className = "card-artist";
+      artist.textContent = vinyl.artist;
+
+      const meta = document.createElement("div");
+      meta.className = "card-meta";
+
+      const countLabel = document.createElement("span");
+      countLabel.className = "count-label";
+      countLabel.textContent = `#${index + 1}`;
+
+      const spotifyPill = document.createElement("span");
+      spotifyPill.className = "spotify-pill";
+      const dot = document.createElement("span");
+      dot.className = "spotify-dot";
+      const txt = document.createElement("span");
+      txt.textContent = "Open in Spotify";
+      spotifyPill.appendChild(dot);
+      spotifyPill.appendChild(txt);
+
+      meta.appendChild(countLabel);
+      meta.appendChild(spotifyPill);
+
+      card.appendChild(cover);
+      card.appendChild(title);
+      card.appendChild(artist);
+      card.appendChild(meta);
+
+      card.addEventListener("click", () => openSpotify(vinyl));
+
+      return card;
     }
 
-    function getFilteredVinyls(queryText) {
-      const query = (queryText || "").trim().toLowerCase();
-      if (!query) return VINYLS;
-      return VINYLS.filter(v => {
-        const t = (v.title || "").toLowerCase();
-        const a = (v.artist || "").toLowerCase();
-        return t.includes(query) || a.includes(query);
-      });
-    }
-
-    function renderGrid(filterText = "") {
+    function renderGrid() {
       gridEl.innerHTML = "";
-
-      const filtered = getFilteredVinyls(filterText);
-
-      if (filtered.length === 0) {
-        emptyStateEl.style.display = "block";
+      if (!filtered.length) {
+        emptyState.style.display = "block";
         return;
-      } else {
-        emptyStateEl.style.display = "none";
       }
+      emptyState.style.display = "none";
 
-      filtered.forEach(vinyl => {
-        const card = document.createElement("div");
-        card.className = "vinyl-card";
-        card.addEventListener("click", () => openSpotify(vinyl.spotifyUrl));
-
-        const coverWrap = document.createElement("div");
-        coverWrap.className = "cover-wrap";
-
-        const img = document.createElement("img");
-        img.alt = `${vinyl.title || "Album"} cover`;
-        img.src = vinyl.coverUrl || PLACEHOLDER_SVG;
-        coverWrap.appendChild(img);
-
-        // Kick off async cover fetch (if not already loaded)
-        if (!vinyl.coverUrl) {
-          fetchCoverFor(vinyl, img);
-        }
-
-        const badge = document.createElement("div");
-        badge.className = "cover-badge";
-        badge.innerHTML =
-          '<span class="cover-badge-dot"></span><span>Spotify</span>';
-        coverWrap.appendChild(badge);
-
-        const meta = document.createElement("div");
-        meta.className = "vinyl-meta";
-
-        const titleEl = document.createElement("div");
-        titleEl.className = "vinyl-title";
-        titleEl.textContent = vinyl.title || "Untitled album";
-
-        const artistEl = document.createElement("div");
-        artistEl.className = "vinyl-artist";
-        artistEl.textContent = vinyl.artist || "—";
-
-        meta.appendChild(titleEl);
-        meta.appendChild(artistEl);
-
-        const footer = document.createElement("div");
-        footer.className = "card-footer";
-        // (footer kept minimal for now; we could add year/info later)
-
-        card.appendChild(coverWrap);
-        card.appendChild(meta);
-        card.appendChild(footer);
-
+      filtered.forEach((vinyl, idx) => {
+        const card = createCard(vinyl, idx);
         gridEl.appendChild(card);
       });
     }
 
-    // Search
-    searchInputEl.addEventListener("input", e => {
-      renderGrid(e.target.value);
+    function openSpotify(vinyl) {
+      const url = buildSpotifySearchUrl(vinyl);
+      // On mobile this should usually hand over to the Spotify app
+      window.location.href = url;
+    }
+
+    function applySearch() {
+      const q = searchInput.value.trim().toLowerCase();
+      clearSearch.style.display = q ? "block" : "none";
+      if (!q) {
+        filtered = [...VINYLS];
+      } else {
+        filtered = VINYLS.filter(v =>
+          v.title.toLowerCase().includes(q) ||
+          v.artist.toLowerCase().includes(q)
+        );
+      }
+      renderGrid();
+    }
+
+    function pickRandom() {
+      if (!filtered.length) return;
+      const idx = Math.floor(Math.random() * filtered.length);
+      const vinyl = filtered[idx];
+
+      // Remove previous highlight
+      clearTimeout(highlightTimeout);
+      document
+        .querySelectorAll(".card.highlight")
+        .forEach(el => el.classList.remove("highlight"));
+
+      // Find the card in DOM (after filtering, order matches)
+      const card = gridEl.children[idx];
+      if (card) {
+        card.classList.add("highlight");
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      // Also immediately open Spotify for this pick
+      openSpotify(vinyl);
+
+      // Remove highlight after a short moment
+      highlightTimeout = setTimeout(() => {
+        if (card) card.classList.remove("highlight");
+      }, 3000);
+    }
+
+    searchInput.addEventListener("input", applySearch);
+
+    clearSearch.addEventListener("click", () => {
+      searchInput.value = "";
+      applySearch();
+      searchInput.focus();
     });
 
-    // Random album button
-    randomBtnEl.addEventListener("click", () => {
-      const filterText = searchInputEl.value;
-      const pool = getFilteredVinyls(filterText);
-      if (!pool.length) return;
-      const randomIndex = Math.floor(Math.random() * pool.length);
-      const chosen = pool[randomIndex];
-      openSpotify(chosen.spotifyUrl);
+    randomButton.addEventListener("click", pickRandom);
+
+    scrollTopButton.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
     // Initial render

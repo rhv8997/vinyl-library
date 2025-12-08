@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Vinyl Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b0b0d;
+      color: #f5f5f5;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      max-width: 600px;
+      margin-inline: auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    p.subtitle {
+      margin: 8px 0 0;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+
+    .search-box {
+      margin: 16px 0 24px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid #333;
+      background: #141418;
+      color: inherit;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #1db954;
+    }
+
+    ul.vinyl-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .vinyl-item {
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #15151a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .vinyl-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .vinyl-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .vinyl-artist {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .play-button {
+      flex-shrink: 0;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: #1db954;
+      color: #0b0b0d;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .play-button:active {
+      transform: scale(0.96);
+    }
+
+    .empty-state {
+      margin-top: 40px;
+      text-align: center;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Vinyl Library</h1>
+    <p class="subtitle">Tap a record to play it on Spotify.</p>
+  </header>
+
+  <div class="search-box">
+    <input
+      id="search"
+      class="search-input"
+      type="text"
+      placeholder="Search vinyls by title or artist..."
+      autocomplete="off"
+    />
+  </div>
+
+  <ul id="vinyl-list" class="vinyl-list"></ul>
+
+  <p id="empty-state" class="empty-state" style="display:none;">
+    No vinyls found. Try a different search.
+  </p>
+
+  <script>
+    /**
+     * 1) ADD YOUR VINYLS HERE
+     *
+     * - title: name of the album
+     * - artist: artist name
+     * - spotifyUrl: open.spotify.com link OR spotify:album:ID
+     *
+     * To get the URL:
+     *   In Spotify → go to album → Share → Copy link to album
+     */
+    const VINYLS = [
+      {
+        title: "Random Access Memories",
+        artist: "Daft Punk",
+        spotifyUrl: "https://open.spotify.com/album/4m2880jivSbbyEGAKfITCa"
+      },
+      {
+        title: "Rumours",
+        artist: "Fleetwood Mac",
+        spotifyUrl: "https://open.spotify.com/album/1bt6q2SruMsBtcerNVtpZB"
+      },
+      {
+        title: "Abbey Road",
+        artist: "The Beatles",
+        spotifyUrl: "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN"
+      }
+      // 👉 Add more objects like this for each vinyl you own
+    ];
+
+    const vinylListEl = document.getElementById("vinyl-list");
+    const searchInputEl = document.getElementById("search");
+    const emptyStateEl = document.getElementById("empty-state");
+
+    function renderList(filterText = "") {
+      vinylListEl.innerHTML = "";
+
+      const query = filterText.trim().toLowerCase();
+      const filtered = VINYLS.filter(v => {
+        if (!query) return true;
+        return (
+          v.title.toLowerCase().includes(query) ||
+          v.artist.toLowerCase().includes(query)
+        );
+      });
+
+      if (filtered.length === 0) {
+        emptyStateEl.style.display = "block";
+        return;
+      } else {
+        emptyStateEl.style.display = "none";
+      }
+
+      filtered.forEach(vinyl => {
+        const li = document.createElement("li");
+        li.className = "vinyl-item";
+
+        const info = document.createElement("div");
+        info.className = "vinyl-info";
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "vinyl-title";
+        titleEl.textContent = vinyl.title;
+
+        const artistEl = document.createElement("div");
+        artistEl.className = "vinyl-artist";
+        artistEl.textContent = vinyl.artist;
+
+        info.appendChild(titleEl);
+        info.appendChild(artistEl);
+
+        const button = document.createElement("button");
+        button.className = "play-button";
+        button.textContent = "Play";
+        button.addEventListener("click", () => {
+          // Open Spotify. On mobile this should jump to the app.
+          window.location.href = vinyl.spotifyUrl;
+        });
+
+        li.appendChild(info);
+        li.appendChild(button);
+        vinylListEl.appendChild(li);
+      });
+    }
+
+    // Initial render
+    renderList();
+
+    // Live search
+    searchInputEl.addEventListener("input", (e) => {
+      renderList(e.target.value);
+    });
+  </script>
+</body>
+</html>

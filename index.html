@@ -469,7 +469,7 @@
 
     function buildSpotifySearchUrl(vinyl) {
       const q = encodeURIComponent(`${vinyl.artist} ${vinyl.title}`);
-      return `https://open.spotify.com/search/${q}`;
+      return `spotify:search:${q}`;
     }
 
     function createCard(vinyl, index) {
